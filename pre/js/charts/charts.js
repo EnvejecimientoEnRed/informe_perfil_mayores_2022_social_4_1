@@ -23,13 +23,10 @@ export function initChart(iframe) {
     //Desarrollo del gráfico
     d3.csv('https://raw.githubusercontent.com/CarlosMunozDiazCSIC/informe_perfil_mayores_2022_social_4_1/main/data/convivencia_mas65_eurostat.csv', function(error,data) {
         if (error) throw error;
-
-        console.log(data);
-
         //Declaramos fuera las variables genéricas
-        let margin = {top: 20, right: 20, bottom: 20, left: 70},
-            width = document.getElementById('chart').clientWidth - margin.left - margin.right,
-            height = document.getElementById('chart').clientHeight - margin.top - margin.bottom;
+        let margin = {top: 20, right: 20, bottom: 20, left: 35},
+            width = document.getElementById('bars--first').clientWidth - margin.left - margin.right,
+            height = document.getElementById('bars--first').clientHeight - margin.top - margin.bottom;
 
         let chart1 = d3.select("#bars--first")
             .append("svg")
@@ -55,7 +52,7 @@ export function initChart(iframe) {
             .padding([0.2]);
 
         let xAxis = d3.axisBottom(x)
-            .tickValues(x.domain().filter(function(d,i){ return !(i%10)}));
+            .tickValues(x.domain().filter(function(d,i){ return !(i%2)}));
         
         chart1.append("g")
             .attr("transform", "translate(0," + height + ")")
@@ -96,6 +93,8 @@ export function initChart(iframe) {
             .keys(gruposConvivenciaHombres)
             (data);
 
+        console.log(dataStackedWomen);
+
         function init() {
             chart1.append("g")
                 .attr('class','chart-g-1')
@@ -103,8 +102,13 @@ export function initChart(iframe) {
                 .data(dataStackedWomen)
                 .enter()
                 .append("g")
-                .attr("fill", function(d) { return color(d.data.name); })
+                .attr("fill", function(d) { return colorMujeres(d.key); })
+                .selectAll("rect")
+                .data(function(d) { return d; })
+                .enter()
                 .append("rect")
+                    .attr('class','prueba-1')
+                    .attr("x", function(d) { console.log(d); return x(d.data.Periodo); })
                     .attr("y", function(d) { return y(0); })
                     .attr("height", function(d) { return 0; })
                     .attr("width",x.bandwidth())
@@ -119,8 +123,13 @@ export function initChart(iframe) {
                 .data(dataStackedMen)
                 .enter()
                 .append("g")
-                .attr("fill", function(d) { return color(d.data.name); })
+                .attr("fill", function(d) { return colorHombres(d.key); })
+                .selectAll("rect")
+                .data(function(d) { return d; })
+                .enter()
                 .append("rect")
+                    .attr('class','prueba-2')
+                    .attr("x", function(d) { console.log(d); return x(d.data.Periodo); })
                     .attr("y", function(d) { return y(0); })
                     .attr("height", function(d) { return 0; })
                     .attr("width",x.bandwidth())
@@ -131,7 +140,25 @@ export function initChart(iframe) {
         }
 
         function animateChart() {
-
+            chart1.selectAll('.prueba-1')
+                .attr("x", function(d) { console.log(d); return x(d.data.Periodo); })
+                .attr("y", function(d) { return y(0); })
+                .attr("height", function(d) { return 0; })
+                .attr("width",x.bandwidth())
+                .transition()
+                .duration(2500)
+                .attr("y", function(d) { return y(d[1]); })
+                .attr("height", function(d) { return y(d[0]) - y(d[1]); });
+            
+            chart2.selectAll('.prueba-2')
+                .attr("x", function(d) { console.log(d); return x(d.data.Periodo); })
+                .attr("y", function(d) { return y(0); })
+                .attr("height", function(d) { return 0; })
+                .attr("width",x.bandwidth())
+                .transition()
+                .duration(2500)
+                .attr("y", function(d) { return y(d[1]); })
+                .attr("height", function(d) { return y(d[0]) - y(d[1]); });
         }
 
         /////
@@ -159,12 +186,16 @@ export function initChart(iframe) {
         setRRSSLinks('formas_convivencia_mayores');
 
         //Captura de pantalla de la visualización
-        setChartCanvas();
+        //setChartCanvas();
+        setTimeout(() => {
+            setCustomCanvas();
+        }, 5000);
 
         let pngDownload = document.getElementById('pngImage');
 
         pngDownload.addEventListener('click', function(){
-            setChartCanvasImage('formas_convivencia_mayores');
+            //setChartCanvasImage('formas_convivencia_mayores');
+            setChartCustomCanvasImage('formas_convivencia_mayores');
         });
 
         //Altura del frame
