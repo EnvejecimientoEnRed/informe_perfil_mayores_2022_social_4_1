@@ -93,8 +93,6 @@ export function initChart(iframe) {
             .keys(gruposConvivenciaHombres)
             (data);
 
-        console.log(dataStackedWomen);
-
         function init() {
             chart1.append("g")
                 .attr('class','chart-g-1')
