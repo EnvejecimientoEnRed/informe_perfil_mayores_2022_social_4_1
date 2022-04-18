@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { numberWithCommas2 } from '../helpers';
 //import { getInTooltip, getOutTooltip, positionTooltip } from './modules/tooltip';
 import { setChartHeight } from '../modules/height';
-import { setChartCanvas, setChartCanvasImage, setCustomCanvas, setChartCustomCanvasImage } from '../modules/canvas-image';
+import { setChartCanvas, setChartCanvasImage } from '../modules/canvas-image';
 import { setRRSSLinks } from '../modules/rrss';
 import { setFixedIframeUrl } from './chart_helpers';
 
@@ -184,16 +184,12 @@ export function initChart(iframe) {
         setRRSSLinks('formas_convivencia_mayores');
 
         //Captura de pantalla de la visualización
-        //setChartCanvas();
-        setTimeout(() => {
-            setCustomCanvas();
-        }, 5000);
+        setChartCanvas();
 
         let pngDownload = document.getElementById('pngImage');
 
         pngDownload.addEventListener('click', function(){
-            //setChartCanvasImage('formas_convivencia_mayores');
-            setChartCustomCanvasImage('formas_convivencia_mayores');
+            setChartCanvasImage('formas_convivencia_mayores');
         });
 
         //Altura del frame
