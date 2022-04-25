@@ -1,30 +1,33 @@
 //Desarrollo de las visualizaciones
 import * as d3 from 'd3';
-import { numberWithCommas2 } from '../helpers';
-//import { getInTooltip, getOutTooltip, positionTooltip } from './modules/tooltip';
+import { numberWithCommas3 } from '../helpers';
+import { getInTooltip, getOutTooltip, positionTooltip } from '../modules/tooltip';
 import { setChartHeight } from '../modules/height';
 import { setChartCanvas, setChartCanvasImage } from '../modules/canvas-image';
 import { setRRSSLinks } from '../modules/rrss';
 import { setFixedIframeUrl } from './chart_helpers';
 
 //Colores fijos
-const COLOR_PRIMARY_1 = '#F8B05C', 
-COLOR_PRIMARY_2 = '#E37A42',
-COLOR_COMP_1 = '#528FAD', 
-COLOR_COMP_2 = '#AADCE0',
-COLOR_GREY_1 = '#D6D6D6', 
-COLOR_GREY_2 = '#A3A3A3',
-COLOR_ANAG__PRIM_1 = '#BA9D5F', 
-COLOR_ANAG_PRIM_2 = '#9E6C51',
-COLOR_ANAG_PRIM_3 = '#9E3515',
-COLOR_ANAG_COMP_1 = '#1C5A5E';
+const COLOR_PRIMARY_1 = '#F8B05C',
+COLOR_GREY_1 = '#D6D6D6',
+COLOR_ANAG_PRIM_1 = '#BA9D5F',
+COLOR_ANAG_PRIM_3 = '#9E3515';
+let tooltip = d3.select('#tooltip');
+
+//Diccionario
+let dictionary = {
+    one_adult: 'Soledad',
+    couple_alone: 'Pareja sola',
+    couple_with_others: 'Pareja con otras personas',
+    other_forms: 'Otras formas'
+}
 
 export function initChart(iframe) {
     //Desarrollo del gráfico
     d3.csv('https://raw.githubusercontent.com/CarlosMunozDiazCSIC/informe_perfil_mayores_2022_social_4_1/main/data/convivencia_mas65_eurostat.csv', function(error,data) {
         if (error) throw error;
         //Declaramos fuera las variables genéricas
-        let margin = {top: 20, right: 20, bottom: 20, left: 35},
+        let margin = {top: 20, right: 20, bottom: 40, left: 32.5},
             width = document.getElementById('bars--first').clientWidth - margin.left - margin.right,
             height = document.getElementById('bars--first').clientHeight - margin.top - margin.bottom;
 
@@ -51,8 +54,19 @@ export function initChart(iframe) {
             .range([0, width])
             .padding([0.2]);
 
-        let xAxis = d3.axisBottom(x)
-            .tickValues(x.domain().filter(function(d,i){ return !(i%2)}));
+        let xAxis = function(g) {
+            g.call(d3.axisBottom(x).tickValues(x.domain().filter(function(d,i){ return !(i%2); })));
+            g.call(function(svg) {
+                svg.selectAll("text")  
+                    .style("text-anchor", "end")
+                    .attr("dx", "-.8em")
+                    .attr("dy", ".15em")
+                    .attr("transform", "rotate(-45)");
+            });
+            
+            g.call(function(g){g.selectAll('.tick line').remove()});
+            g.call(function(g){g.select('.domain').remove()});
+        }
         
         chart1.append("g")
             .attr("transform", "translate(0," + height + ")")
@@ -67,27 +81,39 @@ export function initChart(iframe) {
             .domain([0, 100])
             .range([height, 0]);
 
+        let yAxis = function(g) {
+            g.call(d3.axisLeft(y).ticks(5));
+            g.selectAll('.tick line')
+                .attr('class', function(d,i) {
+                    if (d == 0) {
+                        return 'line-special';
+                    }
+                })
+                .attr('x1', '0')
+                .attr('x2', `${width}`);
+        }
+
         chart1.append("g")
             .attr("class", "yaxis")
-            .call(d3.axisLeft(y));
+            .call(yAxis);
 
         chart2.append("g")
             .attr("class", "yaxis")
-            .call(d3.axisLeft(y));
+            .call(yAxis);
 
         //Colores
         let colorMujeres = d3.scaleOrdinal()
             .domain(gruposConvivenciaMujeres)
-            .range([COLOR_PRIMARY_1, COLOR_COMP_2, COLOR_COMP_1, COLOR_OTHER_1]);
+            .range([COLOR_PRIMARY_1, COLOR_ANAG_PRIM_1, COLOR_ANAG_PRIM_3, COLOR_GREY_1]);
 
         let colorHombres = d3.scaleOrdinal()
             .domain(gruposConvivenciaHombres)
-            .range([COLOR_PRIMARY_1, COLOR_COMP_2, COLOR_COMP_1, COLOR_OTHER_1]);
+            .range([COLOR_PRIMARY_1, COLOR_ANAG_PRIM_1, COLOR_ANAG_PRIM_3, COLOR_GREY_1]);
             
         //Datos stacked
         let dataStackedWomen = d3.stack()
-        .keys(gruposConvivenciaMujeres)
-        (data);
+            .keys(gruposConvivenciaMujeres)
+            (data);
 
         let dataStackedMen = d3.stack()
             .keys(gruposConvivenciaHombres)
@@ -101,60 +127,162 @@ export function initChart(iframe) {
                 .enter()
                 .append("g")
                 .attr("fill", function(d) { return colorMujeres(d.key); })
+                .attr('class', function(d) {
+                    return 'rect-padre-1 ' + d.key;
+                })
                 .selectAll("rect")
                 .data(function(d) { return d; })
                 .enter()
                 .append("rect")
-                    .attr('class','prueba-1')
-                    .attr("x", function(d) { console.log(d); return x(d.data.Periodo); })
-                    .attr("y", function(d) { return y(0); })
-                    .attr("height", function(d) { return 0; })
-                    .attr("width",x.bandwidth())
-                    .transition()
-                    .duration(2500)
-                    .attr("y", function(d) { return y(d[1]); })
-                    .attr("height", function(d) { return y(d[0]) - y(d[1]); });
+                .attr('class','rect-1')
+                .attr("x", function(d) { return x(d.data.Periodo); })
+                .attr("y", function(d) { return y(0); })
+                .attr("height", function(d) { return 0; })
+                .attr("width",x.bandwidth())
+                .on('mouseover', function(d,i,e) {
+                    //Opacidad de las barras
+                    let current = this.parentNode.classList[1];
+                    let other_1 = chart1.selectAll('.rect-1');
+                    let other_2 = chart2.selectAll('.rect-2');
+                    let _this_1 = chart1.selectAll(`.women-${current.split('-')[1]}`); //Elemento padre
+                    let _thisChilds_1 = _this_1.selectAll('.rect-1');
+                    let _this_2 = chart2.selectAll(`.men-${current.split('-')[1]}`); //Elemento padre
+                    let _thisChilds_2 = _this_2.selectAll('.rect-2');
+                    
+                    other_1.each(function() {
+                        this.style.opacity = '0.2';
+                    });
+                    other_2.each(function() {
+                        this.style.opacity = '0.2';
+                    });
+
+                    _thisChilds_1.each(function() {
+                        this.style.opacity = '1';
+                    });
+                    _thisChilds_2.each(function() {
+                        this.style.opacity = '1';
+                    });
+
+                    //Texto                    
+                    let html = '<p class="chart__tooltip--title">Tipo de convivencia: ' + dictionary[current.split('-')[1]] + '</p>' + 
+                        '<p class="chart__tooltip--text">El <b>' + numberWithCommas3(parseFloat(d.data[current]).toFixed(1)) + '%</b> de las mujeres con 65 o más años vivían bajo esta forma de convivencia en ' + d.data.Periodo + '</p>';
+            
+                    tooltip.html(html);
+
+                    //Tooltip
+                    positionTooltip(window.event, tooltip);
+                    getInTooltip(tooltip);
+                })
+                .on('mouseout', function(d,i,e) {
+                    //Quitamos los estilos de la línea
+                    let bars_1 = chart1.selectAll('.rect-1');
+                    let bars_2 = chart2.selectAll('.rect-2');
+                    bars_1.each(function() {
+                        this.style.opacity = '1';
+                    });
+                    bars_2.each(function() {
+                        this.style.opacity = '1';
+                    });
+                
+                    //Quitamos el tooltip
+                    getOutTooltip(tooltip); 
+                })
+                .transition()
+                .duration(2000)
+                .attr("y", function(d) { return y(d[1]); })
+                .attr("height", function(d) { return y(d[0]) - y(d[1]); });
             
             chart2.append("g")
-                .attr('class','chart-g-1')
+                .attr('class','chart-g-2')
                 .selectAll("g")
                 .data(dataStackedMen)
                 .enter()
                 .append("g")
                 .attr("fill", function(d) { return colorHombres(d.key); })
+                .attr('class', function(d) {
+                    return 'rect-padre-2 ' + d.key;
+                })
                 .selectAll("rect")
                 .data(function(d) { return d; })
                 .enter()
                 .append("rect")
-                    .attr('class','prueba-2')
-                    .attr("x", function(d) { console.log(d); return x(d.data.Periodo); })
-                    .attr("y", function(d) { return y(0); })
-                    .attr("height", function(d) { return 0; })
-                    .attr("width",x.bandwidth())
-                    .transition()
-                    .duration(2500)
-                    .attr("y", function(d) { return y(d[1]); })
-                    .attr("height", function(d) { return y(d[0]) - y(d[1]); });
+                .attr('class','rect-2')
+                .attr("x", function(d) { return x(d.data.Periodo); })
+                .attr("y", function(d) { return y(0); })
+                .attr("height", function(d) { return 0; })
+                .attr("width",x.bandwidth())
+                .on('mouseover', function(d,i,e) {
+                    //Opacidad de las barras
+                    let current = this.parentNode.classList[1];
+                    let other_1 = chart1.selectAll('.rect-1');
+                    let other_2 = chart2.selectAll('.rect-2');
+                    let _this_1 = chart1.selectAll(`.women-${current.split('-')[1]}`); //Elemento padre
+                    let _thisChilds_1 = _this_1.selectAll('.rect-1');
+                    let _this_2 = chart2.selectAll(`.men-${current.split('-')[1]}`); //Elemento padre
+                    let _thisChilds_2 = _this_2.selectAll('.rect-2');
+                    
+                    other_1.each(function() {
+                        this.style.opacity = '0.2';
+                    });
+                    other_2.each(function() {
+                        this.style.opacity = '0.2';
+                    });
+
+                    _thisChilds_1.each(function() {
+                        this.style.opacity = '1';
+                    });
+                    _thisChilds_2.each(function() {
+                        this.style.opacity = '1';
+                    });
+
+                    //Texto                    
+                    let html = '<p class="chart__tooltip--title">Tipo de convivencia: ' + dictionary[current.split('-')[1]] + '</p>' + 
+                        '<p class="chart__tooltip--text">El <b>' + numberWithCommas3(parseFloat(d.data[current]).toFixed(1)) + '%</b> de los hombres con 65 o más años vivían bajo esta forma de convivencia en ' + d.data.Periodo + '</p>';
+            
+                    tooltip.html(html);
+
+                    //Tooltip
+                    positionTooltip(window.event, tooltip);
+                    getInTooltip(tooltip);
+                })
+                .on('mouseout', function(d,i,e) {
+                    //Quitamos los estilos de la línea
+                    let bars_1 = chart1.selectAll('.rect-1');
+                    let bars_2 = chart2.selectAll('.rect-2');
+                    bars_1.each(function() {
+                        this.style.opacity = '1';
+                    });
+                    bars_2.each(function() {
+                        this.style.opacity = '1';
+                    });
+                
+                    //Quitamos el tooltip
+                    getOutTooltip(tooltip); 
+                })
+                .transition()
+                .duration(2000)
+                .attr("y", function(d) { return y(d[1]); })
+                .attr("height", function(d) { return y(d[0]) - y(d[1]); });
         }
 
         function animateChart() {
-            chart1.selectAll('.prueba-1')
-                .attr("x", function(d) { console.log(d); return x(d.data.Periodo); })
+            chart1.selectAll('.rect-1')
+                .attr("x", function(d) { return x(d.data.Periodo); })
                 .attr("y", function(d) { return y(0); })
                 .attr("height", function(d) { return 0; })
                 .attr("width",x.bandwidth())
                 .transition()
-                .duration(2500)
+                .duration(2000)
                 .attr("y", function(d) { return y(d[1]); })
                 .attr("height", function(d) { return y(d[0]) - y(d[1]); });
             
-            chart2.selectAll('.prueba-2')
-                .attr("x", function(d) { console.log(d); return x(d.data.Periodo); })
+            chart2.selectAll('.rect-2')
+                .attr("x", function(d) { return x(d.data.Periodo); })
                 .attr("y", function(d) { return y(0); })
                 .attr("height", function(d) { return 0; })
                 .attr("width",x.bandwidth())
                 .transition()
-                .duration(2500)
+                .duration(2000)
                 .attr("y", function(d) { return y(d[1]); })
                 .attr("height", function(d) { return y(d[0]) - y(d[1]); });
         }
