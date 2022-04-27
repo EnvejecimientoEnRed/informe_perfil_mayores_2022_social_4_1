@@ -9,7 +9,7 @@ import { setFixedIframeUrl } from './chart_helpers';
 
 //Colores fijos
 const COLOR_PRIMARY_1 = '#F8B05C',
-COLOR_GREY_1 = '#D6D6D6',
+COLOR_GREY_1 = '#A3A3A3',
 COLOR_ANAG_PRIM_1 = '#BA9D5F',
 COLOR_ANAG_PRIM_3 = '#9E3515';
 let tooltip = d3.select('#tooltip');
@@ -27,7 +27,7 @@ export function initChart() {
     d3.csv('https://raw.githubusercontent.com/CarlosMunozDiazCSIC/informe_perfil_mayores_2022_social_4_1/main/data/convivencia_mas65_eurostat.csv', function(error,data) {
         if (error) throw error;
         //Declaramos fuera las variables genéricas
-        let margin = {top: 20, right: 20, bottom: 40, left: 32.5},
+        let margin = {top: 12.5, right: 10, bottom: 25, left: 32.5},
             width = document.getElementById('bars--first').clientWidth - margin.left - margin.right,
             height = document.getElementById('bars--first').clientHeight - margin.top - margin.bottom;
 
@@ -55,15 +55,7 @@ export function initChart() {
             .padding([0.2]);
 
         let xAxis = function(g) {
-            g.call(d3.axisBottom(x).tickValues(x.domain().filter(function(d,i){ return !(i%2); })));
-            g.call(function(svg) {
-                svg.selectAll("text")  
-                    .style("text-anchor", "end")
-                    .attr("dx", "-.8em")
-                    .attr("dy", ".15em")
-                    .attr("transform", "rotate(-45)");
-            });
-            
+            g.call(d3.axisBottom(x).tickValues(x.domain().filter(function(d,i){ return !(i%4); })));            
             g.call(function(g){g.selectAll('.tick line').remove()});
             g.call(function(g){g.select('.domain').remove()});
         }
