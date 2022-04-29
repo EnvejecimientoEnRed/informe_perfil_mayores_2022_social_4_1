@@ -111,7 +111,7 @@ button {
             display: flex;
             flex-wrap: wrap;            
 
-            width: calc(100% - 140px);
+            width: calc(100% - 141px);
 
             &--item {
                 position: relative;
@@ -480,8 +480,17 @@ button {
             &__options {
                 justify-content: center;
             }
+
+            &__logics {
+                flex-direction: column;
+            }
+
+            &__legend {
+                width: 100%;
+            }
         }
     }
+
     .b-rrss {
         width: 80%;
     }
